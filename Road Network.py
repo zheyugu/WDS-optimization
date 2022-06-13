@@ -127,7 +127,7 @@ for i in range(len(Node_dict)):
     # G.nodes[node_id]['elevation']
     # print(G.nodes[node_id]['x'] )
     # add_junction(name, base_demand=0.0, demand_pattern=None, elevation=0.0, coordinates=None, demand_category=None)
-    wn.add_junction(str(Node_L[i]), base_demand=0, demand_pattern='pat1', 
+    wn.add_junction(str(Node_L[i]), base_demand=0.001, demand_pattern='pat1', 
                     elevation=G.nodes[node_id]['elevation'], 
                     coordinates=(G.nodes[node_id]['x'],G.nodes[node_id]['y'] ))
     # print(G.nodes[node_id]['elevation'])
@@ -160,6 +160,11 @@ wn.remove_link('473')
 wn.remove_link('629')
 wn.remove_link('630')
 wn.remove_node('59153773')
+
+junction = wn.get_node('59095809')
+junction.demand_timeseries_list[0].base_value = 0
+junction = wn.get_node('59079200')
+junction.demand_timeseries_list[0].base_value = 0
 
 wn.add_reservoir('reservoir', base_head=114.757561, head_pattern=None, coordinates=(-87.507,32.467))
 
@@ -197,7 +202,25 @@ pressure_at_5hr = results.node['pressure'].loc[5*3600, :]
 wntr.graphics.plot_network(wn, node_attribute=pressure_at_5hr, node_size=30, 
                         title='Pressure at 5 hours')
 
+pressure = results.node['pressure']
+pressure_at_5hr = pressure.loc[5*3600,:]
+print('Pressure at 5 hours:')
+print(pressure_at_5hr)
+
+quality = results.node['quality']
+quality_at_10hr = quality.loc[10*3600,:]
+print('Quality at 10 hours:')
+print(quality_at_10hr)
+
+
+flowrate = results.link['flowrate']
+
+print(dict(wn.options.reaction)) 
 
 # os.chdir(r'C:\Users\12757\Desktop\Columbia\M.S. Thesis\WNTR-main\examples\networks')
 # # saved as inp file
 # wn.write_inpfile('Osmnx Roadnetwork2.inp', version=2.2)
+
+# pressure.to_excel('pressure.xlsx')
+# quality.to_excel('quality.xlsx')
+# flowrate.to_excel('flowrate.xlsx')
