@@ -1,4 +1,3 @@
-
 import osmnx as ox
 import networkx as nx
 import wntr
@@ -233,10 +232,24 @@ flowrate = results.link['flowrate']
 
 print(dict(wn.options.reaction)) 
 
+# create elevation dictionary
+elevation = []
+node = []
+for i in range(len(Node_dict)):
+    node_id = list(G_undirected.nodes)[i]
+    elevation.append(G_undirected.nodes[node_id]['elevation'])
+    node.append(Node_L[i])
+    
+elevation = dict(zip(node,elevation))
+# os.chdir("C:/Users/12757/Desktop/Columbia/M.S. Thesis/Optimization")
+# df = pd.DataFrame(elevation,index=[0]).T  # transpose to look just like the sheet above
+# df.to_excel('elevation.xls')    
+
 # os.chdir(r'C:\Users\12757\Desktop\Columbia\M.S. Thesis\WNTR-main\examples\networks')
 # # saved as inp file
 # wn.write_inpfile('Undirected Roadnetwork.inp', version=2.2)
 
+# # export simulation results
 # os.chdir("C:/Users/12757/Desktop/Columbia/M.S. Thesis/Optimization")
 # pressure.to_excel('pressure3.xlsx')
 # quality.to_excel('quality2.xlsx')
