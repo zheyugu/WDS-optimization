@@ -93,7 +93,7 @@ facility = [59101483, 59104418, 59097687, 59082686, 59140961]
 #     node.append(link[i][0])
 
 # create a model
-m = gp.Model('optimization')
+m = gp.Model('Facility Placement')
 
 link,cl = gp.multidict(flowrate)
 # print(link)
@@ -104,19 +104,20 @@ y = m.addVars(facility,vtype=GRB.BINARY, name="y")
 cap = m.addVars(facility,vtype=GRB.CONTINUOUS, name="cap")
 
 # set parameter value
+# gpd for D, CAP_MAX, CAP_MIN,    $ for FC  $/gpd for TC
 D = []
 CAP_MAX = []
 CAP_MIN = []
-FC = []
-TC = []
+FC = [100000, 110000, 120000, 130000, 140000]
+TC = [100, 90, 80, 70, 60]
 for i in range(290):
     D.append(22800)
     
 for i in range(5):
-    CAP_MAX.append(1000)
+    CAP_MAX.append(10000000)
     CAP_MIN.append(0)
-    FC.append(100000)
-    TC.append(100)
+    # FC.append(100000)
+    # TC.append(100)
     
 D = dict(zip(node,D))
 CAP_MAX = dict(zip(facility,CAP_MAX))
@@ -143,11 +144,12 @@ m.addConstrs((cap[i] >= CAP_MIN[i] * y[i] for i in facility), name='MIN Facility
 #     node.append(link[i][0])
 # m.setObjective((gp.quicksum(x[i,j] * cl[i,j] for i,j in link)),GRB.MAXIMIZE) 
 # m.setObjective((gp.quicksum(x[i,j] * 1 for i,j in link)),GRB.MAXIMIZE)   
-m.setObjective((gp.quicksum(y[i] * FC[i] + cap[i] * TC[i]  for i in facility)),GRB.MAXIMIZE)
+m.setObjective((gp.quicksum(y[i] * FC[i] for i in facility) 
+                + gp.quicksum(cap[i] * TC[i]  for i in facility)),GRB.MINIMIZE)
 
 # Run optimization engine
 m.optimize()
-         
+       
 # #Analysis
 # facility_placement = pd.DataFrame(columns=["Node", "Facility"])
 
@@ -160,3 +162,19 @@ m.optimize()
 #             facility_placement = facility_placement.append({"Node": j, "Facility": i }, ignore_index=True )
 # facility_placement.index=['']*count
 # print(facility_placement)
+
+status = m.status
+if status == GRB.Status.OPTIMAL:
+    for v in m.getVars():
+        print('%s %g' % (v.varName, v.x))
+    print('Obj: %g' % m.objVal)
+       
+elif status == GRB.Status.INFEASIBLE:
+    print('Optimization was stopped with status %d' % status)
+    # do IIS
+    m.computeIIS()
+    m.write("m.ilp")
+    gp.read("m.ilp")
+    for c in m.getConstrs():
+        if c.IISConstr:
+            print('%s' % c.constrName)
