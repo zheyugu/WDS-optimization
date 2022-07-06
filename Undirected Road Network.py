@@ -241,9 +241,20 @@ for i in range(len(Node_dict)):
     node.append(Node_L[i])
     
 elevation = dict(zip(node,elevation))
+
+# create pipe length dictionary
+length = []
+link = []
+for i in range(len(Edge_dict)):
+    edge_id = list(G_undirected.edges)[i]
+    length.append(G_undirected.edges[edge_id]['length'])
+    link.append(Edge_L[i])
+    
+length = dict(zip(link,length))
+
 # os.chdir("C:/Users/12757/Desktop/Columbia/M.S. Thesis/Optimization")
-# df = pd.DataFrame(elevation,index=[0]).T  # transpose to look just like the sheet above
-# df.to_excel('elevation.xls')    
+# df = pd.DataFrame(length,index=[0]).T  # transpose to look just like the sheet above
+# df.to_excel('length.xls')    
 
 # os.chdir(r'C:\Users\12757\Desktop\Columbia\M.S. Thesis\WNTR-main\examples\networks')
 # # saved as inp file
