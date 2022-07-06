@@ -8,6 +8,7 @@ import gurobipy as gp
 from gurobipy import GRB
 from itertools import product
 import math
+import csv
 
 os.chdir("C:/Users/12757/Desktop/Columbia/M.S. Thesis/Optimization")
 
@@ -137,11 +138,11 @@ for column in list(ws.columns)[1:]:
 # for i in range(len(link)):
 #     facility.append(link[i][1])
 #     node.append(link[i][0])
-
-# # create a model
+# --------------------------------------------------------------------------------
+# create a model
 # m = gp.Model('Facility Placement')
 
-# # create a list with facility
+# create a list with facility
 # facility = [59101483, 59104418, 59097687, 59082686, 59140961]
 
 link,flowrate = gp.multidict(new_flowrate)
@@ -149,13 +150,13 @@ node,elevation = gp.multidict(elevation)
 # print(node)
 # print(link)
 
-# # create variables
+# create variables
 # x = m.addVars(facility,node,vtype=GRB.BINARY, name="x")
 # y = m.addVars(facility,vtype=GRB.BINARY, name="y")
 # cap = m.addVars(facility,vtype=GRB.CONTINUOUS, name="cap")
 
-# # set parameter value
-# # gpd for D, CAP_MAX, CAP_MIN,    $ for FC  $/gpd for TC
+# set parameter value
+# gpd for D, CAP_MAX, CAP_MIN,    $ for FC  $/gpd for TC
 # D = []
 # CAP_MAX = []
 # CAP_MIN = []
@@ -199,7 +200,7 @@ node,elevation = gp.multidict(elevation)
 # m.setObjective((gp.quicksum(y[i] * FC[i] for i in facility) 
 #                 + gp.quicksum(cap[i] * TC[i]  for i in facility)),GRB.MINIMIZE)
 
-# # Run optimization engine
+# Run optimization engine
 # m.optimize()
        
 # #Analysis
@@ -230,7 +231,7 @@ node,elevation = gp.multidict(elevation)
 #     for c in m.getConstrs():
 #         if c.IISConstr:
 #             print('%s' % c.constrName)
-
+# --------------------------------------------------------------------------------------
 m = gp.Model('Pipe Sizing')
 
 dup_p_in = []
@@ -255,18 +256,18 @@ Diameter = {0.05:0.05, 0.06:0.05, 0.08:0.08, 0.10:0.10, 0.15:0.15, 0.20:0.20,
 L = length
 S_min = 0.001
 S_max = 0.1
-P_max = 100
+P_max = 353
 Q = new_flowrate
 V_min = 0.6
 V_max = 3
 EL = elevation 
 W = 0.5
-CE = 100000
-CB = 10000
-CPS = 10000
+CE = 1000
+CB = 100
+CPS = 100
 CP = {0.05:50, 0.06:60, 0.08:80, 0.10:100, 0.15:150, 0.20:200, 
       0.25:250, 0.30:300, 0.35:350, 0.40:400, 0.45:450}
-PS_OM = 10000
+PS_OM = 1000
 COL_OM = 1000
 N = []
 
@@ -289,21 +290,22 @@ m.addConstrs((h[i] == e_out[i]-e_in[i] for i in node), name='Elevation Change')
 m.addConstrs((h[i] <= p[i,j] for i,j in link), name='Pump')
 m.addConstrs((S_max >= (e_in[i]-e_in[j]+h[i])/L[i,j] for i,j in link), name='Slope LHS')
 m.addConstrs(((e_in[i]-e_in[j]+h[i])/L[i,j] >= S_min for i,j in link), name='Slope RHS')
-m.addConstrs((gp.quicksum(math.pi/8 * Diameter[k] ** 2 * d[i,j,k] for k in D) <= 
-              V_max * Q[i,j] for i,j in link), name='Velocity')
+m.addConstrs((gp.quicksum(math.pi/4 * Diameter[k] ** 2 * d[i,j,k] for k in D) >= 
+                 Q[i,j] / V_max for i,j in link), name='Velocity')
+
 m.addConstrs((Q[i,j] * p[i,j] <= pc[i,j] for i,j in link), name='Pump Capacity')
 m.addConstr((gp.quicksum(p[i,j] for i,j in link) <= P_max ), name='Max Pump Number')
 
 # create objective
-obj1 = gp.quicksum((CE * 0.5 * ((EL[i] - e_in[i]) + (EL[j] - e_out[j])) * L[i,j] *
-                   (gp.quicksum(Diameter[k] * d[i,j,k] for k in D) + 2 * W)+
-                   CB * L[i,j] * (gp.quicksum(Diameter[k] * d[i,j,k] for k in D) + 2 * W)) 
-                   for i,j in link)
+# obj1 = gp.quicksum((CE * 0.5 * ((EL[i] - e_in[i]) + (EL[j] - e_out[j])) * L[i,j] *
+#                     (gp.quicksum(Diameter[k] * d[i,j,k] for k in D) + 2 * W)+
+#                     CB * L[i,j] * (gp.quicksum(Diameter[k] * d[i,j,k] for k in D) + 2 * W)) 
+#                     for i,j in link)
 obj2 = gp.quicksum(L[i,j] * gp.quicksum(CP[k] * Diameter[k] * d[i,j,k] for k in D) 
-                   for i,j in link)
+                    for i,j in link)
 obj3 = gp.quicksum(CPS * p[i,j] for i,j in link)
 obj4 = gp.quicksum(COL_OM * N[i] for i in node) + gp.quicksum(PS_OM * p[i,j] for i,j in link)
-obj = obj1 + obj2 + obj3 + obj4
+obj = obj2 + obj3 + obj4
 
 m.setObjective((obj),GRB.MINIMIZE)
 
@@ -326,5 +328,51 @@ m.optimize()
 #     for c in m.getConstrs():
 #         if c.IISConstr:
 #             print('%s' % c.constrName)
+
+# status = m.status
+# if status == GRB.Status.UNBOUNDED:
+#     print('The model cannot be solved because it is unbounded')
+    
+# if status == GRB.Status.OPTIMAL:
+#     print('The optimal objective is %g' % m.objVal)
+    
+# if status != GRB.Status.INF_OR_UNBD and status != GRB.Status.INFEASIBLE:
+#     print('Optimization was stopped with status %d' % status)
+    
+
+
+# # do IIS
+# print('The model is infeasible; computing IIS')
+# m.computeIIS()
+# if m.IISMinimal:
+#   print('IIS is minimal\n')
+# else:
+#   print('IIS is not minimal\n')
+# print('\nThe following constraint(s) cannot be satisfied:')
+# for c in m.getConstrs():
+#     if c.IISConstr:
+#         print('%s' % c.constrName)
+ 
+# export variables to excel
+# var_names = []
+# var_values = []
+
+# for var in m.getVars():
+#     if var.X > 0: 
+#         var_names.append(str(var.varName))
+#         var_values.append(var.X)
+
+# # Write to csv
+# with open('Results.csv', 'w') as myfile:
+#     wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+#     wr.writerows(zip(var_names, var_values))
+
+varInfo = [(v.varName, v.X) for v in m.getVars()]
+
+# Write to csv
+with open('Variable.csv', 'w', newline='') as myfile:
+    wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
+    wr.writerows(varInfo)
+
 
 
