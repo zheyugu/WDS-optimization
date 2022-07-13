@@ -236,6 +236,7 @@ for i in range(353):
         diameter.append(s[i][1])
 
 diameter = dict(zip(zip(start, end),diameter))
+# print(diameter)
 # df = pd.DataFrame(diameter,index=[0]).T  # transpose to look just like the sheet above
 # df.to_excel('diameter.xls')
 # print(diameter[59146257,59116300])
@@ -246,11 +247,14 @@ ws = wb.active
 diameter = {}
 for column in list(ws.columns)[1:]:
     diameter [column[0].value] = [(c.value) for c in column[3:]][0]
-    
-for i in range(356):
-    if i != 12 and i != 241 and i != 290 and i != 339:
-        pipe = wn.get_link(str(i))
-        pipe.diameter = diameter[i]
+
+for key,value in diameter.items():
+    pipe = wn.get_link(str(key))
+    pipe.diameter = value     
+# for i in range(356):
+#     if i != 12 and i != 241 and i != 290 and i != 339:
+#         pipe = wn.get_link(str(i))
+#         pipe.diameter = diameter[i]
 # for i in wn.pipes():
 #     pipe = wn.get_link(str(i))
 #     pipe.diameter = diameter[i]
@@ -270,16 +274,16 @@ results = sim.run_sim()
 # wntr.graphics.plot_network(wn, node_attribute=pressure_at_5hr, node_size=30, 
 #                         title='Pressure at 5 hours')
 
-# pressure = results.node['pressure']
-# pressure_at_5hr = pressure.loc[5*3600,:]
-# print('Pressure at 5 hours:')
-# print(pressure_at_5hr)
 
+pressure = results.node['pressure']
+pressure_at_5hr = pressure.loc[5*3600,:]
+# print('Pressure at 5 hours:')
+# print(pressure_at_5hr.name)
+    
 # quality = results.node['quality']
 # quality_at_10hr = quality.loc[10*3600,:]
 # print('Quality at 10 hours:')
 # print(quality_at_10hr)
-
 
 # flowrate = results.link['flowrate']
 
@@ -305,6 +309,63 @@ results = sim.run_sim()
     
 # length = dict(zip(link,length))
 
+# find links which have negative pressure node
+# link = wn.get_links_for_node('59146293', flag='ALL')
+# link = [int(x) for x in link]
+link_neg_pressure = []
+for index, val in pressure_at_5hr.iteritems():
+    if pressure_at_5hr[index] <= 0:
+        # print( index, val)
+        link = wn.get_links_for_node(str(index), flag='ALL')
+        link = [int(x) for x in link]
+        for j in link:
+            link_neg_pressure.append(j)
+
+res = []
+for i in link_neg_pressure:
+    if i not in res:
+        res.append(i)
+link_neg_pressure = res  
+
+for i in link_neg_pressure:
+    pipe = wn.get_link(str(i))
+    if pipe.diameter == 0.05:
+       pipe.diameter = pipe.diameter + 0.01 
+    elif pipe.diameter == 0.06:
+        pipe.diameter = pipe.diameter + 0.02
+    elif pipe.diameter == 0.08:
+        pipe.diameter = pipe.diameter + 0.02
+    else:
+        pipe.diameter = pipe.diameter + 0.05
+        
+link_diameter = wn.query_link_attribute('diameter', np.less, 50)
+print('New Diameter:')
+print(link_diameter)
+
+# -------------------------------------------------------------------------------------
+# First Iteration
+# Simulate hydraulics 
+sim = wntr.sim.EpanetSimulator(wn)
+results = sim.run_sim()
+
+pressure = results.node['pressure']
+pressure_at_5hr = pressure.loc[5*3600,:]
+
+link_neg_pressure = []
+for index, val in pressure_at_5hr.iteritems():
+    if pressure_at_5hr[index] <= 0:
+        # print( index, val)
+        link = wn.get_links_for_node(str(index), flag='ALL')
+        link = [int(x) for x in link]
+        for j in link:
+            link_neg_pressure.append(j)
+
+res = []
+for i in link_neg_pressure:
+    if i not in res:
+        res.append(i)
+link_neg_pressure = res  
+# -------------------------------------------------------------------------------------
 # os.chdir("C:/Users/12757/Desktop/Columbia/M.S. Thesis/Optimization")
 # df = pd.DataFrame(length,index=[0]).T  # transpose to look just like the sheet above
 # df.to_excel('length.xls')    
@@ -315,7 +376,7 @@ results = sim.run_sim()
 
 # # export simulation results
 # os.chdir("C:/Users/12757/Desktop/Columbia/M.S. Thesis/Optimization")
-# pressure.to_excel('pressure3.xlsx')
+# pressure.to_excel('new diameter pressure.xlsx')
 # quality.to_excel('quality2.xlsx')
 # flowrate.to_excel('flowrate2.xlsx')
 
