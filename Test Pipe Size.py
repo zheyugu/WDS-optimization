@@ -331,10 +331,12 @@ for i in link_neg_pressure:
     pipe = wn.get_link(str(i))
     if pipe.diameter == 0.05:
        pipe.diameter = pipe.diameter + 0.01 
-    elif pipe.diameter == 0.06:
+    elif pipe.diameter < 0.1 and pipe.diameter > 0.05:
         pipe.diameter = pipe.diameter + 0.02
-    elif pipe.diameter == 0.08:
-        pipe.diameter = pipe.diameter + 0.02
+    # elif pipe.diameter == 0.06:
+    #     pipe.diameter = pipe.diameter + 0.02
+    # elif pipe.diameter == 0.08:
+    #     pipe.diameter = pipe.diameter + 0.02
     else:
         pipe.diameter = pipe.diameter + 0.05
         
@@ -342,29 +344,96 @@ link_diameter = wn.query_link_attribute('diameter', np.less, 50)
 print('New Diameter:')
 print(link_diameter)
 
+
 # -------------------------------------------------------------------------------------
-# First Iteration
-# Simulate hydraulics 
-sim = wntr.sim.EpanetSimulator(wn)
-results = sim.run_sim()
+# # First Iteration
+# # Simulate hydraulics 
+# sim = wntr.sim.EpanetSimulator(wn)
+# results = sim.run_sim()
 
-pressure = results.node['pressure']
-pressure_at_5hr = pressure.loc[5*3600,:]
+# pressure = results.node['pressure']
+# pressure_at_5hr = pressure.loc[5*3600,:]
 
-link_neg_pressure = []
-for index, val in pressure_at_5hr.iteritems():
-    if pressure_at_5hr[index] <= 0:
+# link_neg_pressure = []
+# for index, val in pressure_at_5hr.iteritems():
+#     if pressure_at_5hr[index] <= 0:
+#         # print( index, val)
+#         link = wn.get_links_for_node(str(index), flag='ALL')
+#         link = [int(x) for x in link]
+#         for j in link:
+#             link_neg_pressure.append(j)
+
+# res = []
+# for i in link_neg_pressure:
+#     if i not in res:
+#         res.append(i)
+# link_neg_pressure = res  
+
+# for i in link_neg_pressure:
+#     pipe = wn.get_link(str(i))
+#     if pipe.diameter == 0.05:
+#        pipe.diameter = pipe.diameter + 0.01 
+#     elif pipe.diameter < 0.1 and pipe.diameter > 0.05:
+#         pipe.diameter = pipe.diameter + 0.02
+#     # elif pipe.diameter == 0.06:
+#     #     pipe.diameter = pipe.diameter + 0.02
+#     # elif pipe.diameter == 0.08:
+#     #     pipe.diameter = pipe.diameter + 0.02
+#     else:
+#         pipe.diameter = pipe.diameter + 0.05
+        
+# link_diameter = wn.query_link_attribute('diameter', np.less, 50)
+# -------------------------------------------------------------------------------------
+break_out_flag = False
+for iteration in range(10):
+    sim = wntr.sim.EpanetSimulator(wn)
+    results = sim.run_sim()
+
+    pressure = results.node['pressure']
+    pressure_at_5hr = pressure.loc[5*3600,:]
+
+    link_neg_pressure = []
+    for index, val in pressure_at_5hr.iteritems():
+        if pressure_at_5hr[index] <= 0:
         # print( index, val)
-        link = wn.get_links_for_node(str(index), flag='ALL')
-        link = [int(x) for x in link]
-        for j in link:
-            link_neg_pressure.append(j)
+            link = wn.get_links_for_node(str(index), flag='ALL')
+            link = [int(x) for x in link]
+            for j in link:
+                link_neg_pressure.append(j)
 
-res = []
-for i in link_neg_pressure:
-    if i not in res:
-        res.append(i)
-link_neg_pressure = res  
+    res = []
+    for i in link_neg_pressure:
+        if i not in res:
+            res.append(i)
+            link_neg_pressure = res  
+
+    for i in link_neg_pressure:
+        pipe = wn.get_link(str(i))
+        if pipe.diameter == 0.05:
+            pipe.diameter = pipe.diameter + 0.01 
+        elif pipe.diameter < 0.1 and pipe.diameter > 0.05:
+            pipe.diameter = pipe.diameter + 0.02
+    # elif pipe.diameter == 0.06:
+    #     pipe.diameter = pipe.diameter + 0.02
+    # elif pipe.diameter == 0.08:
+    #     pipe.diameter = pipe.diameter + 0.02
+        else:
+            pipe.diameter = pipe.diameter + 0.05
+        
+    link_diameter = wn.query_link_attribute('diameter', np.less, 50)
+    
+    for key,value in diameter.items():
+        pipe = wn.get_link(str(key))
+        if pipe.diameter >= 0.45:
+            print(key)
+            print(pipe.diameter)
+            break_out_flag = True
+            break
+    if break_out_flag:
+        print(iteration)
+        break
+              
+
 # -------------------------------------------------------------------------------------
 # os.chdir("C:/Users/12757/Desktop/Columbia/M.S. Thesis/Optimization")
 # df = pd.DataFrame(length,index=[0]).T  # transpose to look just like the sheet above
