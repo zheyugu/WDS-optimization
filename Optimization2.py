@@ -34,6 +34,9 @@ Edge_dict=G_undirected.edges(data=True)
 Node_L=list(G_undirected.nodes)
 Edge_L=list(G_undirected.edges)
 
+a, b = Edge_L.index((59153751,59112870,0)), Edge_L.index((59153751,59153773,0))
+Edge_L[b], Edge_L[a] = Edge_L[a], Edge_L[b]
+
 os.chdir("C:/Users/12757/Desktop/Columbia/M.S. Thesis/Simulation")
 #add an elevation atribute to the road nodes that way when we deal with them later we are chilling 
 im = tiff.imread('./USGS_13_n33w088_20190918.tif')
@@ -73,13 +76,13 @@ for i in range(len(Node_dict)):
     # G.nodes[node_id]['elevation']
     # print(G.nodes[node_id]['x'] )
     # add_junction(name, base_demand=0.0, demand_pattern=None, elevation=0.0, coordinates=None, demand_category=None)
-    wn.add_junction(str(Node_L[i]), base_demand=0.001, demand_pattern='pat1', 
+    wn.add_junction(str(Node_L[i]), base_demand=0.0009, demand_pattern='pat1', 
                     elevation=G_undirected.nodes[node_id]['elevation'], 
                     coordinates=(G_undirected.nodes[node_id]['x'],G_undirected.nodes[node_id]['y'] ))
     # print(G.nodes[node_id]['elevation'])
     
 for j in range(len(Edge_dict)):
-    edge_id = list(G_undirected.edges)[j]
+    edge_id = Edge_L[j]
     # print(edge_id)
     # G.edges[edge_id]['source']
     # G.edges[edge_id]['target']
@@ -109,13 +112,13 @@ junction.demand_timeseries_list[0].base_value = 0
 
 wn.add_reservoir('reservoir', base_head=114.757561, head_pattern=None, coordinates=(-87.507,32.467))
 
-edge_id = list(G.edges)[341]
+edge_id = Edge_L[341]
 G_undirected.edges[edge_id]['length']    
-wn.add_pipe('341', str(Edge_L[341][0]), 'reservoir', length=G_undirected.edges[edge_id]['length'], diameter=0.3556, roughness=100,
+wn.add_pipe('341', str(Edge_L[341][0]), 'reservoir', length=G_undirected.edges[edge_id]['length'], diameter=0.5, roughness=100,
       minor_loss=0.0)
-edge_id= list(G.edges)[347]
+edge_id= Edge_L[347]
 G_undirected.edges[edge_id]['length']    
-wn.add_pipe('347', str(Edge_L[347][0]), 'reservoir', length=G_undirected.edges[edge_id]['length'], diameter=0.3556, roughness=100,
+wn.add_pipe('347', str(Edge_L[347][0]), 'reservoir', length=G_undirected.edges[edge_id]['length'], diameter=0.5, roughness=100,
       minor_loss=0.0)
 
 ax = wntr.graphics.plot_network(wn)
@@ -137,12 +140,6 @@ wn.options.time.pattern_timestep = 6*3600
 sim = wntr.sim.EpanetSimulator(wn)
 results = sim.run_sim()
 
-# calculate average pressure and flowrate
-pressure = results.node['pressure']
-pressure_avg = pressure.mean()
-# print(pressure_avg['59146257'])
-flowrate = results.link['flowrate']
-flowrate_avg = flowrate.mean()
 
 os.chdir("C:/Users/12757/Desktop/Columbia/M.S. Thesis/Optimization")
 wb = load_workbook(filename='flowrate length.xlsx')
@@ -195,6 +192,14 @@ elevation = {}
 for column in list(ws.columns)[1:]:
     elevation [column[0].value] = [(c.value) for c in column[1:]][0]
 
+
+# calculate average pressure and flowrate
+pressure = results.node['pressure']
+pressure_avg = pressure.mean()
+
+flowrate = results.link['flowrate']
+flowrate_avg = flowrate.mean()
+
 # calculate pressure drop for each link
 pressure_drop = {}    
 for key,value in link.items():
@@ -204,18 +209,19 @@ for key,value in link.items():
 # find 10% links with lowest pressure drop
 sort = sorted(((v,k) for k,v in pressure_drop.items()))
 link_min = []
-for i in range (int(0.10 * len(sort))):
+for i in range (int(0.08 * len(sort))):
     link_min.append(sort[i][1])
 
 # rest of links
 link_res = []
-for i in range (int(0.10 * len(sort)),len(sort)):
+for i in range (int(0.08 * len(sort)),len(sort)):
     link_res.append(sort[i][1])    
 
 # define pipe size options for each link
 pipe_size = {}
 for i in link_min:
-    pipe_size [i] = [0.05, 0.06, 0.08, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45]
+    # pipe_size [i] = [0.05, 0.06, 0.08, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45]
+    pipe_size [i] = [0.20, 0.30, 0.50]
     for j in link_res:
         pipe_size[j] = [0.5]
 
@@ -227,10 +233,12 @@ link,flowrate = gp.multidict(new_flowrate)
 node,elevation = gp.multidict(elevation)
 
 # set parameter value
-D1 = [0.05, 0.06, 0.08, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45]
+# D1 = [0.05, 0.06, 0.08, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45]
+D1 = [0.20, 0.30, 0.50]
 D2 = [0.5]
-Diameter = {0.05:0.05, 0.06:0.05, 0.08:0.08, 0.10:0.10, 0.15:0.15, 0.20:0.20, 
-            0.25:0.25, 0.30:0.30, 0.35:0.35, 0.40:0.40, 0.45:0.45, 0.5:0.5}
+# Diameter = {0.05:0.05, 0.06:0.05, 0.08:0.08, 0.10:0.10, 0.15:0.15, 0.20:0.20, 
+            # 0.25:0.25, 0.30:0.30, 0.35:0.35, 0.40:0.40, 0.45:0.45, 0.5:0.5}
+Diameter = {0.20:0.20, 0.30:0.30, 0.50:0.50}
 L = length #Length of pipe connecting node i to node j [m]
 S_min = 0.001 #minimum pipe slope allowed. 0.1% for pressurized flow
 S_max = 0.1 #maximum pipe slope allowed. 10% or 0.1 m/m
@@ -243,8 +251,9 @@ EL = elevation  #Ground elevation at node i [m] determined from the LiDAR data
 # CE = 1000 #cost of excavation $/m3
 # CB = 100 #cost of bedding gravel $/m2
 CPS = 10 #capital of a pump station $/unit
-CP = {0.05:50, 0.06:60, 0.08:80, 0.10:100, 0.15:150, 0.20:200, #material costs of piping 
-      0.25:250, 0.30:300, 0.35:350, 0.40:400, 0.45:450, 0.5:500}  #  $/m of pipe of diameter k
+# CP = {0.05:50, 0.06:60, 0.08:80, 0.10:100, 0.15:150, 0.20:200, #material costs of piping 
+      # 0.25:250, 0.30:300, 0.35:350, 0.40:400, 0.45:450, 0.5:500}  #  $/m of pipe of diameter k
+CP = {0.20:200, 0.30:300, 0.50:500}
 PS_OM = 10 #Operations and maintenance cost for pump station [$/PS]
 COL_OM = 1000000 #Operations and maintenance cost for collection system piping [$/connection]
 N = [] #number of nodes i that contribute wastewater to the system
@@ -307,13 +316,13 @@ m.optimize()
 #         if c.IISConstr:
 #             print('%s' % c.constrName)
 
-#Write to csv
+# #Write to csv
 # varInfo = [(v.varName, v.X) for v in m.getVars()]
 # with open('New Variable.csv', 'w', newline='') as myfile:
 #     wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
 #     wr.writerows(varInfo)
 
-# # export variables to excel
+# # export variables greater than 0 to excel
 # var_names = []
 # var_values = []
 
@@ -323,6 +332,6 @@ m.optimize()
 #         var_values.append(var.X)
 
 # # Write to csv
-# with open('New Pipe Size.csv', 'w', newline='') as myfile:
+# with open('New Pipe Size 80%.csv', 'w', newline='') as myfile:
 #     wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
 #     wr.writerows(zip(var_names, var_values))
