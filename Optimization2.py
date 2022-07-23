@@ -209,19 +209,19 @@ for key,value in link.items():
 # find 10% links with lowest pressure drop
 sort = sorted(((v,k) for k,v in pressure_drop.items()))
 link_min = []
-for i in range (int(0.08 * len(sort))):
+for i in range (int(0.06 * len(sort))):
     link_min.append(sort[i][1])
 
 # rest of links
 link_res = []
-for i in range (int(0.08 * len(sort)),len(sort)):
+for i in range (int(0.06 * len(sort)),len(sort)):
     link_res.append(sort[i][1])    
 
 # define pipe size options for each link
 pipe_size = {}
 for i in link_min:
     # pipe_size [i] = [0.05, 0.06, 0.08, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45]
-    pipe_size [i] = [0.20, 0.30, 0.50]
+    pipe_size [i] = [0.45, 0.48, 0.50]
     for j in link_res:
         pipe_size[j] = [0.5]
 
@@ -234,11 +234,11 @@ node,elevation = gp.multidict(elevation)
 
 # set parameter value
 # D1 = [0.05, 0.06, 0.08, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45]
-D1 = [0.20, 0.30, 0.50]
-D2 = [0.5]
+D1 = [0.45, 0.48, 0.50]
+D2 = [0.50]
 # Diameter = {0.05:0.05, 0.06:0.05, 0.08:0.08, 0.10:0.10, 0.15:0.15, 0.20:0.20, 
             # 0.25:0.25, 0.30:0.30, 0.35:0.35, 0.40:0.40, 0.45:0.45, 0.5:0.5}
-Diameter = {0.20:0.20, 0.30:0.30, 0.50:0.50}
+Diameter = {0.45:0.45, 0.48:0.48, 0.50:0.50}
 L = length #Length of pipe connecting node i to node j [m]
 S_min = 0.001 #minimum pipe slope allowed. 0.1% for pressurized flow
 S_max = 0.1 #maximum pipe slope allowed. 10% or 0.1 m/m
@@ -253,7 +253,7 @@ EL = elevation  #Ground elevation at node i [m] determined from the LiDAR data
 CPS = 10 #capital of a pump station $/unit
 # CP = {0.05:50, 0.06:60, 0.08:80, 0.10:100, 0.15:150, 0.20:200, #material costs of piping 
       # 0.25:250, 0.30:300, 0.35:350, 0.40:400, 0.45:450, 0.5:500}  #  $/m of pipe of diameter k
-CP = {0.20:200, 0.30:300, 0.50:500}
+CP = {0.45:450, 0.48:480, 0.50:500}
 PS_OM = 10 #Operations and maintenance cost for pump station [$/PS]
 COL_OM = 1000000 #Operations and maintenance cost for collection system piping [$/connection]
 N = [] #number of nodes i that contribute wastewater to the system
@@ -332,6 +332,6 @@ m.optimize()
 #         var_values.append(var.X)
 
 # # Write to csv
-# with open('New Pipe Size 80%.csv', 'w', newline='') as myfile:
+# with open('New Pipe Size 60%.csv', 'w', newline='') as myfile:
 #     wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
 #     wr.writerows(zip(var_names, var_values))

@@ -259,7 +259,7 @@ length = dict(zip(zip(x_new, y_new),length_new))
 link = dict(zip(zip(x_new, y_new),link_new))
 
 # change diameter to optimized size
-pipe_size = pd.read_csv('New Pipe Size 80%.csv', header=None)
+pipe_size = pd.read_csv('New Pipe Size 60%.csv', header=None)
 pipe_size = pipe_size.iloc[:353]
 pipe_size.values.T[0].tolist()
 
